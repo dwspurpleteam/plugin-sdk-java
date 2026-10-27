@@ -1,23 +1,30 @@
-.PHONY: test build lint generate consumer lock vuln
+.DEFAULT_GOAL := test
 
-test:
-	./gradlew test --no-daemon
-
+.PHONY: build
 build:
 	./gradlew build --no-daemon
 
+.PHONY: test
+test:
+	@./gradlew test --no-daemon
+
+.PHONY: lint
 lint:
-	./gradlew checkstyleMain checkstyleTest --no-daemon
+	@./gradlew checkstyleMain checkstyleTest --no-daemon
 
-generate:
-	./gradlew generateProto --no-daemon
-
-consumer:
-	./gradlew publishSdkPublicationToTestRepository --no-daemon
-	./gradlew -p examples/consumer build --no-daemon
-
-lock:
-	./gradlew dependencies --write-locks --no-daemon > /dev/null
-
+.PHONY: vuln
 vuln:
-	osv-scanner scan source --lockfile=gradle.lockfile
+	@osv-scanner scan source --lockfile=gradle.lockfile
+
+.PHONY: generate
+generate:
+	@./gradlew generateProto --no-daemon
+
+.PHONY: consumer
+consumer:
+	@./gradlew publishSdkPublicationToTestRepository --no-daemon
+	@./gradlew -p examples/consumer build --no-daemon
+
+.PHONY: lock
+lock:
+	@./gradlew dependencies --write-locks --no-daemon > /dev/null
