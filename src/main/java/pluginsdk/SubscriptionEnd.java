@@ -1,6 +1,6 @@
 package pluginsdk;
 
 public enum SubscriptionEnd {
-    CLOSED,
-    REMOTE_COMPLETED
+  CLOSED,
+  REMOTE_COMPLETED
 }

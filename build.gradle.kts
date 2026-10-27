@@ -4,6 +4,8 @@ plugins {
     `java-library`
     `maven-publish`
     checkstyle
+    pmd
+    id("com.diffplug.spotless") version "8.10.2"
     id("com.google.protobuf") version "0.10.0"
 }
 
@@ -82,6 +84,19 @@ publishing {
 }
 
 checkstyle { toolVersion = "14.3.0" }
+
+pmd { toolVersion = "7.27.0" }
+
+spotless {
+    java {
+        target("src/main/java/**/*.java", "src/test/java/**/*.java", "examples/consumer/src/main/java/**/*.java")
+        googleJavaFormat()
+    }
+}
+
+tasks.named<Pmd>("pmdMain") {
+    setSource(files(fileTree("src/main/java"), fileTree("examples/consumer/src/main/java")))
+}
 
 configurations.named("checkstyle") {
     resolutionStrategy.force("com.google.guava:guava:33.7.2-jre")

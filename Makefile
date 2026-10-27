@@ -10,7 +10,11 @@ test:
 
 .PHONY: lint
 lint:
-	@./gradlew checkstyleMain checkstyleTest --no-daemon
+	@./gradlew spotlessCheck pmdMain pmdTest checkstyleMain checkstyleTest --no-daemon
+
+.PHONY: lint/fix
+lint/fix:
+	@./gradlew spotlessApply --no-daemon
 
 .PHONY: vuln
 vuln:

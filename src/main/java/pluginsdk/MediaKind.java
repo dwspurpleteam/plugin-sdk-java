@@ -1,3 +1,6 @@
 package pluginsdk;
 
-public enum MediaKind { AUDIO, VIDEO }
+public enum MediaKind {
+  AUDIO,
+  VIDEO
+}

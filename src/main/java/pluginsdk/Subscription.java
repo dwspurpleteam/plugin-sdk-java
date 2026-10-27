@@ -3,8 +3,8 @@ package pluginsdk;
 import java.util.concurrent.CompletionStage;
 
 public interface Subscription extends AutoCloseable {
-    CompletionStage<SubscriptionEnd> completion();
+  CompletionStage<SubscriptionEnd> completion();
 
-    @Override
-    void close();
+  @Override
+  void close();
 }
