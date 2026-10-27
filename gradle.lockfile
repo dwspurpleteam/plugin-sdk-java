@@ -1,0 +1,39 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :dependencies --write-locks
+com.google.android:annotations:4.1.1.4=runtimeClasspath,testRuntimeClasspath
+com.google.api.grpc:proto-google-common-protos:2.64.1=compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.code.findbugs:jsr305:3.0.2=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.code.gson:gson:2.14.0=runtimeClasspath,testRuntimeClasspath
+com.google.errorprone:error_prone_annotations:2.50.0=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.guava:failureaccess:1.0.3=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.guava:guava:33.7.2-jre=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.j2objc:j2objc-annotations:3.1=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.protobuf:protobuf-java:4.34.2=compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+com.google.protobuf:protoc:4.34.2=protobufToolsLocator_protoc
+com.puppycrawl.tools:checkstyle:14.3.0=checkstyle
+commons-beanutils:commons-beanutils:1.11.0=checkstyle
+commons-collections:commons-collections:3.2.2=checkstyle
+info.picocli:picocli:4.7.7=checkstyle
+io.grpc:grpc-api:1.84.0=compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+io.grpc:grpc-context:1.84.0=runtimeClasspath,testRuntimeClasspath
+io.grpc:grpc-core:1.84.0=runtimeClasspath,testRuntimeClasspath
+io.grpc:grpc-netty-shaded:1.84.0=runtimeClasspath,testRuntimeClasspath
+io.grpc:grpc-protobuf-lite:1.84.0=compileProtoPath,runtimeClasspath,testCompileProtoPath,testRuntimeClasspath
+io.grpc:grpc-protobuf:1.84.0=compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+io.grpc:grpc-stub:1.84.0=compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+io.grpc:grpc-util:1.84.0=runtimeClasspath,testRuntimeClasspath
+io.grpc:protoc-gen-grpc-java:1.84.0=protobufToolsLocator_grpc
+io.perfmark:perfmark-api:0.27.0=runtimeClasspath,testRuntimeClasspath
+net.sf.saxon:Saxon-HE:12.9=checkstyle
+org.antlr:antlr4-runtime:4.13.2=checkstyle
+org.apache.tomcat:annotations-api:6.0.53=compileClasspath,compileProtoPath
+org.codehaus.mojo:animal-sniffer-annotations:1.27=compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+org.javassist:javassist:3.28.0-GA=checkstyle
+org.jspecify:jspecify:1.0.1=checkstyle,compileClasspath,compileProtoPath,runtimeClasspath,testCompileClasspath,testCompileProtoPath,testRuntimeClasspath
+org.reflections:reflections:0.10.2=checkstyle
+org.slf4j:slf4j-simple:2.0.20=checkstyle
+org.xmlresolver:xmlresolver:5.3.3=checkstyle
+empty=annotationProcessor,protobuf,testAnnotationProcessor,testProtobuf
