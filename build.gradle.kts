@@ -12,12 +12,45 @@ plugins {
 group = "pluginsdk"
 version = providers.gradleProperty("releaseVersion").getOrElse("0.1.0-SNAPSHOT")
 
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+    exclusiveContent {
+        forRepository {
+            ivy {
+                url = uri("https://raw.githubusercontent.com/dwspurpleteam/streamapi")
+                patternLayout { artifact("[revision]/api/proto/streamapi/v1/[artifact].[ext]") }
+                metadataSources { artifact() }
+            }
+        }
+        filter { includeGroup("streamapi.contract") }
+    }
+}
+
+val protoContract = configurations.create("protoContract")
+val streamapiRevision = "389270095f093bc0c5b9744a71ca9810731c99b6"
+val prepareProto = tasks.register<Sync>("prepareProto") {
+    from(protoContract) {
+        into("streamapi/v1")
+        rename { it.removeSuffix("-$streamapiRevision.proto") + ".proto" }
+        filter { line: String ->
+            if (line == "package streamapi.v1;") {
+                "${line}\n\noption java_package = \"pluginsdk.internal.proto\";\noption java_multiple_files = true;"
+            } else {
+                line
+            }
+        }
+    }
+    into(layout.buildDirectory.dir("streamapi-proto"))
+}
+
+sourceSets.main { proto { srcDir(prepareProto) } }
 
 val grpcVersion = "1.84.0"
 val protobufVersion = "4.34.2"
 
 dependencies {
+    add("protoContract", "streamapi.contract:media:$streamapiRevision@proto")
+    add("protoContract", "streamapi.contract:events:$streamapiRevision@proto")
     implementation("io.grpc:grpc-protobuf:$grpcVersion")
     implementation("io.grpc:grpc-stub:$grpcVersion")
     implementation("com.google.protobuf:protobuf-java:$protobufVersion")
