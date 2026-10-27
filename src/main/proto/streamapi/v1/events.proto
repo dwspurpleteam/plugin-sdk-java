@@ -1,6 +1,3 @@
-// Based on streamapi API at ef206070e5a7c65261236c6ae21a07fa50da0f12
-// Java options are added for this library
-
 syntax = "proto3";
 
 package streamapi.v1;

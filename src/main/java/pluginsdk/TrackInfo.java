@@ -1,6 +1,5 @@
 package pluginsdk;
 
-/** Description of a track received in one subscription generation */
 public final class TrackInfo {
     private final String trackId;
     private final String participantId;

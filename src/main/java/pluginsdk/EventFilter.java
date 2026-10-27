@@ -3,7 +3,6 @@ package pluginsdk;
 import java.util.List;
 import java.util.Objects;
 
-/** Optional participant and event type filters */
 public final class EventFilter {
     private final String participantId;
     private final List<String> eventTypes;

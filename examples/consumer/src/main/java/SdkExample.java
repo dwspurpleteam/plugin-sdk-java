@@ -10,7 +10,6 @@ import pluginsdk.PluginClient;
 import pluginsdk.StreamFailure;
 import pluginsdk.TrackInfo;
 
-/** Subscribe to events and optionally RTP using the published SDK */
 public class SdkExample {
     public static void main(String[] args) throws InterruptedException {
         if (args.length < 2 || args.length > 3) {

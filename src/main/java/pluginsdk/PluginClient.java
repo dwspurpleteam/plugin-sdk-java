@@ -30,7 +30,6 @@ import pluginsdk.internal.proto.SubscribeEventsResponse;
 import pluginsdk.internal.proto.SubscribeRequest;
 import pluginsdk.internal.proto.SubscribeResponse;
 
-/** Thread-safe client for call media and events */
 public final class PluginClient implements AutoCloseable {
     private static final Metadata.Key<String> CALL_ID = Metadata.Key.of("x-call-id", Metadata.ASCII_STRING_MARSHALLER);
     private static final int MAX_RETRIES = 8;
@@ -49,14 +48,12 @@ public final class PluginClient implements AutoCloseable {
         this.metadata = Map.copyOf(metadata);
     }
 
-    /** Creates a client builder for host:port or a gRPC target */
     public static Builder builder(String target) { return new Builder(target); }
 
     static PluginClient forChannel(ManagedChannel channel, Map<String, String> metadata) {
         return new PluginClient(channel, metadata);
     }
 
-    /** Subscribes to events using the LiveKit room SID as callId */
     public Subscription subscribeEvents(String callId, EventFilter filter, EventListener listener) {
         requireCallId(callId);
         Objects.requireNonNull(filter, "filter");
@@ -74,7 +71,6 @@ public final class PluginClient implements AutoCloseable {
         return start(stream);
     }
 
-    /** Subscribes to RTP media for a call and its LiveKit room name */
     public Subscription subscribeMedia(String callId, String roomName, MediaFilter filter, MediaListener listener) {
         requireCallId(callId);
         if (roomName == null || roomName.isBlank()) throw new IllegalArgumentException("roomName must not be blank");
@@ -123,7 +119,7 @@ public final class PluginClient implements AutoCloseable {
                     if (track == null) throw new StreamFailure("PROTOCOL_ERROR", "unknown track handle", null);
                     listener.onTrackEnded(track);
                 }
-                case PAYLOAD_NOT_SET -> { /* A newer server may send an unknown payload */ }
+                case PAYLOAD_NOT_SET -> {}
             }
         };
         return start(new Stream<>(callId, listener, MediaServiceGrpc.getSubscribeMethod(),
@@ -153,7 +149,6 @@ public final class PluginClient implements AutoCloseable {
         channel.shutdownNow();
     }
 
-    /** Connection configuration */
     public static final class Builder {
         private final String target;
         private final Map<String, String> metadata = new HashMap<>();
@@ -164,10 +159,8 @@ public final class PluginClient implements AutoCloseable {
             this.target = target;
         }
 
-        /** Disables TLS for local development */
         public Builder plaintext() { plaintext = true; return this; }
 
-        /** Adds ASCII metadata, for example the stage cookie */
         public Builder metadata(String key, String value) {
             Objects.requireNonNull(key, "key");
             Objects.requireNonNull(value, "value");
@@ -287,7 +280,7 @@ public final class PluginClient implements AutoCloseable {
 
         private void fail(StreamFailure error) {
             if (finish(error, null)) {
-                try { listener.onFailed(error); } catch (RuntimeException ignored) { /* already terminated */ }
+                try { listener.onFailed(error); } catch (RuntimeException ignored) {}
             }
         }
 

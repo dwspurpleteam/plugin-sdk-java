@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Objects;
 
-/** One complete RTP packet, with the track description */
 public final class MediaPacket {
     private final TrackInfo track;
     private final byte[] rtp;

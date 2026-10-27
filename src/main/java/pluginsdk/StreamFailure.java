@@ -1,6 +1,5 @@
 package pluginsdk;
 
-/** A subscription failure, with its transport status where available */
 public final class StreamFailure extends RuntimeException {
     private final String code;
 

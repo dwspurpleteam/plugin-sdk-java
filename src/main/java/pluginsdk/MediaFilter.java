@@ -3,7 +3,6 @@ package pluginsdk;
 import java.util.Objects;
 import java.util.Set;
 
-/** Optional filters for a media subscription */
 public final class MediaFilter {
     private final String participantId;
     private final String trackId;
@@ -15,7 +14,6 @@ public final class MediaFilter {
         this.kinds = Set.copyOf(kinds);
     }
 
-    /** Selects audio and video */
     public static MediaFilter all() { return new MediaFilter("", "", Set.of()); }
     public static MediaFilter audio() { return new MediaFilter("", "", Set.of(MediaKind.AUDIO)); }
     public static MediaFilter video() { return new MediaFilter("", "", Set.of(MediaKind.VIDEO)); }
