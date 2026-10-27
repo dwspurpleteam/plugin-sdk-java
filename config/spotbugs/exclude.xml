@@ -1,0 +1,5 @@
+<FindBugsFilter>
+    <Match>
+        <Class name="~pluginsdk\.internal\.proto\..*"/>
+    </Match>
+</FindBugsFilter>

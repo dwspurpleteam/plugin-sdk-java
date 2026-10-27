@@ -6,6 +6,7 @@ plugins {
     checkstyle
     pmd
     id("com.diffplug.spotless") version "8.10.2"
+    id("com.github.spotbugs") version "6.5.13"
     id("com.google.protobuf") version "0.10.0"
 }
 
@@ -125,6 +126,8 @@ publishing {
 checkstyle { toolVersion = "14.3.0" }
 
 pmd { toolVersion = "7.27.0" }
+
+spotbugs { excludeFilter = file("config/spotbugs/exclude.xml") }
 
 spotless {
     java {
