@@ -4,6 +4,12 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * An RTP packet and its associated track and reception time. Delivered to {@link
+ * MediaListener#onPacket(MediaPacket)}.
+ *
+ * @since 0.1.0
+ */
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class MediaPacket {
   private static final int RTP_EXTENSION_HEADER_BYTES = 4;

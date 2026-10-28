@@ -3,6 +3,12 @@ package pluginsdk;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Selects media kinds and optional participant and track IDs for a media subscription. Used by
+ * {@link PluginClient#subscribeMedia(String, String, MediaFilter, MediaListener)}.
+ *
+ * @since 0.1.0
+ */
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class MediaFilter {
   private final String participantId;

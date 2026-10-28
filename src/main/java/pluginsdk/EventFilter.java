@@ -3,6 +3,12 @@ package pluginsdk;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Selects event types and an optional participant for an event subscription. Used by {@link
+ * PluginClient#subscribeEvents(String, EventFilter, EventListener)}.
+ *
+ * @since 0.1.0
+ */
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class EventFilter {
   private final String participantId;

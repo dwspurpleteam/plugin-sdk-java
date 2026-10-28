@@ -27,10 +27,27 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - run: make ${{ matrix.check }}
+      - if: matrix.check == 'test'
+        run: ./gradlew test --no-daemon
+
+      - if: matrix.check == 'build'
+        run: ./gradlew build --no-daemon
+
+      - if: matrix.check == 'lint'
+        run: ./gradlew spotlessCheck pmdMain pmdTest checkstyleMain checkstyleTest spotbugsMain spotbugsTest --no-daemon
+
+      - if: matrix.check == 'generate'
+        run: ./gradlew generateProto --no-daemon
+
+      - if: matrix.check == 'consumer'
+        run: |
+          ./gradlew publishSdkPublicationToTestRepository --no-daemon
+          ./gradlew -p examples/consumer build --no-daemon
 
       - if: matrix.check == 'lock'
-        run: git diff --exit-code -- gradle.lockfile
+        run: |
+          ./gradlew dependencies --write-locks --no-daemon > /dev/null
+          git diff --exit-code -- gradle.lockfile
 
   vuln:
     runs-on: ubuntu-26.04

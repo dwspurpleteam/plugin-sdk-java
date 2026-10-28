@@ -1,5 +1,11 @@
 package pluginsdk;
 
+/**
+ * Describes a media track associated with received RTP packets. Delivered to {@link
+ * MediaListener#onTrack(TrackInfo)} and available from {@link MediaPacket#track()}.
+ *
+ * @since 0.1.0
+ */
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class TrackInfo {
   private final String trackId;

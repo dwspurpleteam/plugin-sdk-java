@@ -30,6 +30,11 @@ import pluginsdk.internal.proto.SubscribeEventsResponse;
 import pluginsdk.internal.proto.SubscribeRequest;
 import pluginsdk.internal.proto.SubscribeResponse;
 
+/**
+ * Connects a plugin to streamapi and creates call media and event subscriptions.
+ *
+ * @since 0.1.0
+ */
 public final class PluginClient implements AutoCloseable {
   private static final Metadata.Key<String> CALL_ID =
       Metadata.Key.of("x-call-id", Metadata.ASCII_STRING_MARSHALLER);
@@ -202,6 +207,11 @@ public final class PluginClient implements AutoCloseable {
     channel.shutdownNow();
   }
 
+  /**
+   * Configures and creates a client for a streamapi endpoint.
+   *
+   * @since 0.1.0
+   */
   @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
   public static final class Builder {
     private final String target;

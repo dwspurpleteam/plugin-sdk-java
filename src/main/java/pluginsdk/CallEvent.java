@@ -2,6 +2,12 @@ package pluginsdk;
 
 import java.time.Instant;
 
+/**
+ * An event received from a call through an event subscription. Delivered to {@link
+ * EventListener#onEvent(CallEvent)}.
+ *
+ * @since 0.1.0
+ */
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class CallEvent {
   private final String id;

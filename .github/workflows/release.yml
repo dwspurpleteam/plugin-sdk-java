@@ -22,7 +22,10 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - run: make test build lint generate consumer lock
+      - run: |
+          ./gradlew test build spotlessCheck pmdMain pmdTest checkstyleMain checkstyleTest spotbugsMain spotbugsTest generateProto publishSdkPublicationToTestRepository --no-daemon
+          ./gradlew -p examples/consumer build --no-daemon
+          ./gradlew dependencies --write-locks --no-daemon > /dev/null
 
       - run: git diff --exit-code -- gradle.lockfile
 
