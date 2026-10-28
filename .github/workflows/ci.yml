@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [test, build, lint, generate, consumer, lock]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - if: matrix.check == 'test'
+        run: ./gradlew test --no-daemon
+
+      - if: matrix.check == 'build'
+        run: ./gradlew build --no-daemon
+
+      - if: matrix.check == 'lint'
+        run: ./gradlew spotlessCheck pmdMain pmdTest checkstyleMain checkstyleTest spotbugsMain spotbugsTest --no-daemon
+
+      - if: matrix.check == 'generate'
+        run: ./gradlew generateProto --no-daemon
+
+      - if: matrix.check == 'consumer'
+        run: |
+          ./gradlew publishSdkPublicationToTestRepository --no-daemon
+          ./gradlew -p examples/consumer build --no-daemon
+
+      - if: matrix.check == 'lock'
+        run: |
+          ./gradlew dependencies --write-locks --no-daemon > /dev/null
+          git diff --exit-code -- gradle.lockfile
+
+  vuln:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        with:
+          scan-args: --lockfile=gradle.lockfile
