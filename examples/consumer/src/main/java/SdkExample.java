@@ -15,11 +15,13 @@ public class SdkExample {
 
     var builder = PluginClient.builder(args[0]);
     if (Boolean.parseBoolean(System.getenv("PLUGIN_SDK_PLAINTEXT"))) builder.plaintext();
+
     String cookie = System.getenv("PLUGIN_SDK_COOKIE");
     if (cookie != null && !cookie.isBlank()) builder.metadata("cookie", cookie);
 
     try (var client = builder.build()) {
       var events = client.subscribeEvents(args[1], EventFilter.all(), new ExampleEventListener());
+
       events
           .completion()
           .whenComplete(
@@ -30,6 +32,7 @@ public class SdkExample {
       if (args.length == ARGS_WITH_ROOM) {
         var media =
             client.subscribeMedia(args[1], args[2], MediaFilter.all(), new ExampleMediaListener());
+
         media
             .completion()
             .whenComplete(

@@ -18,6 +18,7 @@ final class ExampleMediaListener implements MediaListener {
   @Override
   public void onPacket(MediaPacket packet) {
     long count = packets.merge(packet.track().trackId(), 1L, Long::sum);
+
     if (count == 1 || count % 100 == 0) {
       System.out.printf(
           "rtp track=%s seq=%d bytes=%d%n",

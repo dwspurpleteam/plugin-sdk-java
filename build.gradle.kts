@@ -87,9 +87,11 @@ publishing {
     publications {
         create<MavenPublication>("sdk") {
             from(components["java"])
+
             pom {
                 name = "Plugin SDK for Java"
                 description = "Java SDK for call media and events"
+
                 licenses {
                     license {
                         name = "Apache License, Version 2.0"
@@ -109,11 +111,14 @@ publishing {
             name = "test"
             url = uri(layout.buildDirectory.dir("test-repository"))
         }
+
         val githubRepository = providers.environmentVariable("GITHUB_REPOSITORY").orNull
+
         if (githubRepository != null) {
             maven {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/${githubRepository.lowercase()}")
+
                 credentials {
                     username = providers.environmentVariable("GITHUB_ACTOR").orNull
                     password = providers.environmentVariable("GITHUB_TOKEN").orNull

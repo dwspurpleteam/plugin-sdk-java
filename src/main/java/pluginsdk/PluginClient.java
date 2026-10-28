@@ -40,6 +40,7 @@ public final class PluginClient implements AutoCloseable {
       Metadata.Key.of("x-call-id", Metadata.ASCII_STRING_MARSHALLER);
   private static final int MAX_RETRIES = 8;
   private static final String PROTOCOL_ERROR = "PROTOCOL_ERROR";
+
   private final ManagedChannel channel;
   private final Map<String, String> metadata;
   private final ScheduledExecutorService scheduler =
@@ -69,12 +70,14 @@ public final class PluginClient implements AutoCloseable {
     requireCallId(callId);
     Objects.requireNonNull(filter, "filter");
     Objects.requireNonNull(listener, "listener");
+
     var request =
         SubscribeEventsRequest.newBuilder()
             .setCallId(callId)
             .setParticipantId(filter.participantId())
             .addAllEventTypes(filter.eventTypes())
             .build();
+
     Stream<SubscribeEventsResponse> stream =
         new Stream<>(
             callId,
@@ -87,6 +90,7 @@ public final class PluginClient implements AutoCloseable {
                   response.hasOccurredAt()
                       ? Instant.ofEpochSecond(t.getSeconds(), t.getNanos())
                       : null;
+
               listener.onEvent(
                   new CallEvent(
                       response.getEventId(),
@@ -99,6 +103,7 @@ public final class PluginClient implements AutoCloseable {
                       time));
             },
             () -> {});
+
     return start(stream);
   }
 
@@ -109,18 +114,21 @@ public final class PluginClient implements AutoCloseable {
       throw new IllegalArgumentException("roomName must not be blank");
     Objects.requireNonNull(filter, "filter");
     Objects.requireNonNull(listener, "listener");
+
     var builder =
         SubscribeRequest.newBuilder()
             .setCallId(callId)
             .setRoomName(roomName)
             .setParticipantId(filter.participantId())
             .setTrackId(filter.trackId());
+
     for (MediaKind kind : filter.kinds()) {
       builder.addKinds(
           kind == MediaKind.AUDIO
               ? pluginsdk.internal.proto.MediaKind.MEDIA_KIND_AUDIO
               : pluginsdk.internal.proto.MediaKind.MEDIA_KIND_VIDEO);
     }
+
     Map<Integer, TrackInfo> tracks = new HashMap<>();
     Consumer<SubscribeResponse> receive =
         response -> {
@@ -133,6 +141,7 @@ public final class PluginClient implements AutoCloseable {
                     case MEDIA_KIND_VIDEO -> MediaKind.VIDEO;
                     default -> throw new StreamFailure(PROTOCOL_ERROR, "unknown media kind", null);
                   };
+
               var info =
                   new TrackInfo(
                       t.getTrackId(),
@@ -142,37 +151,45 @@ public final class PluginClient implements AutoCloseable {
                       Integer.toUnsignedLong(t.getClockRate()),
                       Integer.toUnsignedLong(t.getChannels()),
                       t.getFmtp());
+
               if (tracks.putIfAbsent(t.getHandle(), info) != null) {
                 throw new StreamFailure(PROTOCOL_ERROR, "duplicate track handle", null);
               }
+
               listener.onTrack(info);
             }
             case PACKET -> {
               var packet = response.getPacket();
               TrackInfo track = tracks.get(packet.getHandle());
+
               if (track == null)
                 throw new StreamFailure(PROTOCOL_ERROR, "unknown track handle", null);
+
               long nanos = packet.getReceivedAtUnixNano();
               Instant received =
                   Instant.ofEpochSecond(
                       Math.floorDiv(nanos, 1_000_000_000L), Math.floorMod(nanos, 1_000_000_000L));
+
               MediaPacket media;
               try {
                 media = new MediaPacket(track, packet.getRtp().toByteArray(), received);
               } catch (IllegalArgumentException e) {
                 throw new StreamFailure(PROTOCOL_ERROR, "invalid RTP packet", e);
               }
+
               listener.onPacket(media);
             }
             case ENDED -> {
               TrackInfo track = tracks.remove(response.getEnded().getHandle());
               if (track == null)
                 throw new StreamFailure(PROTOCOL_ERROR, "unknown track handle", null);
+
               listener.onTrackEnded(track);
             }
             case PAYLOAD_NOT_SET -> {}
           }
         };
+
     return start(
         new Stream<>(
             callId,
@@ -185,11 +202,13 @@ public final class PluginClient implements AutoCloseable {
 
   private Subscription start(Stream<?> stream) {
     if (closed.get()) throw new IllegalStateException("client is closed");
+
     streams.add(stream);
     if (closed.get()) {
       stream.close();
       throw new IllegalStateException("client is closed");
     }
+
     stream.connect();
     return stream;
   }
@@ -202,6 +221,7 @@ public final class PluginClient implements AutoCloseable {
   @Override
   public void close() {
     if (!closed.compareAndSet(false, true)) return;
+
     streams.forEach(Stream::close);
     scheduler.shutdownNow();
     channel.shutdownNow();
@@ -221,6 +241,7 @@ public final class PluginClient implements AutoCloseable {
     private Builder(String target) {
       if (target == null || target.isBlank())
         throw new IllegalArgumentException("target must not be blank");
+
       this.target = target;
     }
 
@@ -232,11 +253,14 @@ public final class PluginClient implements AutoCloseable {
     public Builder metadata(String key, String value) {
       Objects.requireNonNull(key, "key");
       Objects.requireNonNull(value, "value");
+
       if (key.equalsIgnoreCase("x-call-id"))
         throw new IllegalArgumentException("x-call-id is set per subscription");
+
       String normalized = key.toLowerCase(Locale.ROOT);
       Metadata.Key.of(normalized, Metadata.ASCII_STRING_MARSHALLER);
       metadata.put(normalized, value);
+
       return this;
     }
 
@@ -244,6 +268,7 @@ public final class PluginClient implements AutoCloseable {
       ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forTarget(target);
       if (plaintext) builder.usePlaintext();
       else builder.useTransportSecurity();
+
       return new PluginClient(builder.build(), metadata);
     }
   }
@@ -288,15 +313,18 @@ public final class PluginClient implements AutoCloseable {
     void connect() {
       synchronized (lock) {
         if (stopped) return;
+
         retry = null;
         Metadata headers = new Metadata();
         metadata.forEach(
             (key, value) ->
                 headers.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value));
         headers.put(CALL_ID, callId);
+
         ClientCall<Object, T> current =
             channel.newCall((MethodDescriptor<Object, T>) method, CallOptions.DEFAULT);
         call = current;
+
         current.start(
             new ClientCall.Listener<>() {
               @Override
@@ -305,12 +333,14 @@ public final class PluginClient implements AutoCloseable {
                   if (stopped || call != current) return;
                   connectedAt = System.nanoTime();
                 }
+
                 invoke(listener::onConnected);
               }
 
               @Override
               public void onMessage(T value) {
                 if (!isCurrent(current)) return;
+
                 if (invoke(() -> receive.accept(value))) {
                   synchronized (lock) {
                     if (!stopped && call == current) current.request(1);
@@ -324,6 +354,7 @@ public final class PluginClient implements AutoCloseable {
               }
             },
             headers);
+
         current.sendMessage(request);
         current.halfClose();
         current.request(1);
@@ -352,42 +383,51 @@ public final class PluginClient implements AutoCloseable {
     private void ended(ClientCall<Object, T> current, Status status) {
       synchronized (lock) {
         if (stopped || call != current) return;
+
         call = null;
         if (connectedAt != 0 && System.nanoTime() - connectedAt >= TimeUnit.SECONDS.toNanos(30))
           failures = 0;
         connectedAt = 0;
       }
+
       reset.run();
       if (status.isOk()) {
         finish(null, SubscriptionEnd.REMOTE_COMPLETED);
         return;
       }
+
       StreamFailure error =
           new StreamFailure(
               status.getCode().name(),
               status.getDescription() == null ? status.getCode().name() : status.getDescription(),
               status.getCause());
+
       if (status.getCode() != Status.Code.UNAVAILABLE) {
         fail(error);
         return;
       }
+
       boolean exhausted;
       synchronized (lock) {
         if (stopped) return;
         exhausted = failures >= MAX_RETRIES;
       }
+
       if (exhausted) {
         fail(error);
         return;
       }
+
       try {
         listener.onDisconnected(error);
       } catch (RuntimeException e) {
         fail(new StreamFailure("CALLBACK_ERROR", "disconnect handler failed", e));
         return;
       }
+
       synchronized (lock) {
         if (stopped) return;
+
         long base = Math.min(250L << failures, 5000L);
         failures++;
         long delay = Math.max(1, (long) (base * ThreadLocalRandom.current().nextDouble(0.8, 1.2)));
@@ -408,15 +448,19 @@ public final class PluginClient implements AutoCloseable {
       ClientCall<Object, T> current;
       synchronized (lock) {
         if (stopped) return false;
+
         stopped = true;
         if (retry != null) retry.cancel(false);
         current = call;
         call = null;
       }
+
       if (current != null) current.cancel("subscription closed", error);
       streams.remove(this);
+
       if (error == null) completion.complete(end);
       else completion.completeExceptionally(error);
+
       return true;
     }
 
