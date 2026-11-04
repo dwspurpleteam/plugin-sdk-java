@@ -3,17 +3,22 @@ package pluginsdk;
 import com.google.protobuf.Timestamp;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.ClientCalls;
+import io.grpc.stub.MetadataUtils;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -23,8 +28,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import pluginsdk.internal.proto.ActionServiceGrpc;
 import pluginsdk.internal.proto.EventServiceGrpc;
 import pluginsdk.internal.proto.MediaServiceGrpc;
+import pluginsdk.internal.proto.MuteMicrophoneRequest;
 import pluginsdk.internal.proto.SubscribeEventsRequest;
 import pluginsdk.internal.proto.SubscribeEventsResponse;
 import pluginsdk.internal.proto.SubscribeRequest;
@@ -64,6 +71,38 @@ public final class PluginClient implements AutoCloseable {
 
   static PluginClient forChannel(ManagedChannel channel, Map<String, String> metadata) {
     return new PluginClient(channel, metadata);
+  }
+
+  /** Mutes the published microphone tracks of a participant in an active call. */
+  public void muteMicrophone(String callId, UUID activationId, String participantId) {
+    if (closed.get()) throw new IllegalStateException("client is closed");
+    requireCallId(callId);
+    Objects.requireNonNull(activationId, "activationId");
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+
+    Metadata headers = new Metadata();
+    metadata.forEach(
+        (key, value) -> headers.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value));
+    headers.put(CALL_ID, callId);
+    var actionChannel =
+        ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(headers));
+    var request =
+        MuteMicrophoneRequest.newBuilder()
+            .setCallId(callId)
+            .setActivationId(activationId.toString())
+            .setParticipantId(participantId)
+            .build();
+    try {
+      ClientCalls.blockingUnaryCall(
+          actionChannel,
+          ActionServiceGrpc.getMuteMicrophoneMethod(),
+          CallOptions.DEFAULT.withDeadlineAfter(15, TimeUnit.SECONDS),
+          request);
+    } catch (StatusRuntimeException error) {
+      throw new ActionException(
+          error.getStatus().getCode().name(), error.getStatus().getDescription(), error);
+    }
   }
 
   public Subscription subscribeEvents(String callId, EventFilter filter, EventListener listener) {

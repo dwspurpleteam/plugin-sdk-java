@@ -34,13 +34,13 @@ Java библиотека для получения аудио, видео и с
 osv-scanner scan source --lockfile=gradle.lockfile
 ```
 
-Действия плагина в звонке:
+Действия плагина в звонке выполняются через тот же `PluginClient`:
 
 ```java
-var actions = new PluginActions(
-    URI.create("https://calls.vareonix.cc"), activationId,
-    Map.of("Authorization", "Bearer " + token));
-actions.muteMicrophone(participantId);
+var client = PluginClient.builder("calls.vareonix.cc:443")
+    .metadata("authorization", "Bearer " + token)
+    .build();
+client.muteMicrophone(callId, activationId, participantId);
 ```
 
-`activationId` — UUID активной активации, `participantId` — identity участника LiveKit. При ошибке менеджера метод выбрасывает `ActionException` с HTTP-статусом и ответом сервера; ошибки сети передаются как `IOException`. Для stage в заголовки также передаётся cookie окружения.
+`callId` — SID звонка LiveKit, `activationId` — UUID активной активации, `participantId` — identity участника. При ошибке метод выбрасывает `ActionException` с кодом gRPC. Для stage в metadata также передаётся cookie окружения.

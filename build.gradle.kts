@@ -31,7 +31,7 @@ repositories {
 }
 
 val protoContract = configurations.create("protoContract")
-val streamapiRevision = "389270095f093bc0c5b9744a71ca9810731c99b6"
+val streamapiRevision = "b1afa0343173f849907b58a30c3fe18a1b456c0a"
 
 val prepareProto = tasks.register<Sync>("prepareProto") {
     from(protoContract) {
@@ -58,6 +58,7 @@ val protobufVersion = "4.34.2"
 dependencies {
     add("protoContract", "streamapi.contract:media:$streamapiRevision@proto")
     add("protoContract", "streamapi.contract:events:$streamapiRevision@proto")
+    add("protoContract", "streamapi.contract:actions:$streamapiRevision@proto")
 
     implementation("io.grpc:grpc-protobuf:$grpcVersion")
     implementation("io.grpc:grpc-stub:$grpcVersion")

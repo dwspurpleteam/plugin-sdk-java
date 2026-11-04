@@ -1,24 +1,16 @@
 package pluginsdk;
 
-import java.io.IOException;
-
-/** An action rejected or failed by the plugin manager. */
-public final class ActionException extends IOException {
+/** Describes a failed action with its streamapi error code. */
+public final class ActionException extends RuntimeException {
   private static final long serialVersionUID = 1L;
-  private final int status;
-  private final String body;
+  private final String errorCode;
 
-  public ActionException(int statusCode, String responseBody) {
-    super("Plugin action failed with HTTP " + statusCode + ": " + responseBody);
-    this.status = statusCode;
-    this.body = responseBody;
+  public ActionException(String code, String message, Throwable cause) {
+    super(message == null ? code : message, cause);
+    this.errorCode = code;
   }
 
-  public int statusCode() {
-    return status;
-  }
-
-  public String responseBody() {
-    return body;
+  public String code() {
+    return errorCode;
   }
 }
