@@ -38,7 +38,6 @@ osv-scanner scan source --lockfile=gradle.lockfile
 
 ```java
 var client = PluginClient.builder("calls.vareonix.cc:443")
-    .metadata("authorization", "Bearer " + token)
     .build();
 client.sendEvent(callId, activationId, "subtitle.updated", List.of(participantId), "hello");
 client.muteMicrophone(callId, activationId, participantId);
