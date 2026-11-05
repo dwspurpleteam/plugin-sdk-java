@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,6 +80,38 @@ public final class PluginClient implements AutoCloseable {
     if (participantId == null || participantId.isBlank())
       throw new IllegalArgumentException("participantId must not be blank");
     sendEvent(callId, activationId, "microphone.mute", List.of(participantId), "");
+  }
+
+  /** Removes a participant from the call. */
+  public void removeParticipant(String callId, UUID activationId, String participantId) {
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+    sendEvent(callId, activationId, "participant.remove", List.of(participantId), "");
+  }
+
+  /** Updates selected participant permissions; unspecified permissions remain unchanged. */
+  public void updateParticipantPermissions(
+      String callId, UUID activationId, String participantId, Map<String, Boolean> permissions) {
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+    Objects.requireNonNull(permissions, "permissions");
+    var allowed = Set.of("canPublish", "canSubscribe", "canPublishData", "canUpdateMetadata");
+    if (permissions.isEmpty()
+        || permissions.entrySet().stream()
+            .anyMatch(
+                entry ->
+                    entry.getKey() == null
+                        || !allowed.contains(entry.getKey())
+                        || entry.getValue() == null))
+      throw new IllegalArgumentException("invalid participant permissions");
+    var data = new StringJoiner(",", "{", "}");
+    permissions.forEach((name, value) -> data.add("\"" + name + "\":" + value));
+    sendEvent(
+        callId,
+        activationId,
+        "participant.permissions.update",
+        List.of(participantId),
+        data.toString());
   }
 
   /** Sends a named event to participants in an active call. */
