@@ -31,7 +31,7 @@ repositories {
 }
 
 val protoContract = configurations.create("protoContract")
-val streamapiRevision = "ffceb1ce86c400e8b8fc7fa0022f7d92e4736b1c"
+val streamapiRevision = "184e0a33a9b1c60c7add02e707e2913491b3684f"
 
 val prepareProto = tasks.register<Sync>("prepareProto") {
     from(protoContract) {
