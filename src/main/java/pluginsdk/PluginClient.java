@@ -14,6 +14,7 @@ import io.grpc.stub.ClientCalls;
 import io.grpc.stub.MetadataUtils;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -31,7 +32,7 @@ import java.util.function.Consumer;
 import pluginsdk.internal.proto.ActionServiceGrpc;
 import pluginsdk.internal.proto.EventServiceGrpc;
 import pluginsdk.internal.proto.MediaServiceGrpc;
-import pluginsdk.internal.proto.MuteMicrophoneRequest;
+import pluginsdk.internal.proto.SendEventRequest;
 import pluginsdk.internal.proto.SubscribeEventsRequest;
 import pluginsdk.internal.proto.SubscribeEventsResponse;
 import pluginsdk.internal.proto.SubscribeRequest;
@@ -75,11 +76,24 @@ public final class PluginClient implements AutoCloseable {
 
   /** Mutes the published microphone tracks of a participant in an active call. */
   public void muteMicrophone(String callId, UUID activationId, String participantId) {
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+    sendEvent(callId, activationId, "microphone.mute", List.of(participantId), "");
+  }
+
+  /** Sends a named event to participants in an active call. */
+  public void sendEvent(
+      String callId, UUID activationId, String name, List<String> participantIds, String data) {
     if (closed.get()) throw new IllegalStateException("client is closed");
     requireCallId(callId);
     Objects.requireNonNull(activationId, "activationId");
-    if (participantId == null || participantId.isBlank())
-      throw new IllegalArgumentException("participantId must not be blank");
+    if (name == null || name.isBlank())
+      throw new IllegalArgumentException("name must not be blank");
+    Objects.requireNonNull(participantIds, "participantIds");
+    if (participantIds.isEmpty()
+        || participantIds.stream().anyMatch(id -> id == null || id.isBlank()))
+      throw new IllegalArgumentException("participantIds must contain valid recipients");
+    Objects.requireNonNull(data, "data");
 
     Metadata headers = new Metadata();
     metadata.forEach(
@@ -88,15 +102,17 @@ public final class PluginClient implements AutoCloseable {
     var actionChannel =
         ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(headers));
     var request =
-        MuteMicrophoneRequest.newBuilder()
+        SendEventRequest.newBuilder()
             .setCallId(callId)
             .setActivationId(activationId.toString())
-            .setParticipantId(participantId)
+            .setEventName(name)
+            .addAllParticipantIds(participantIds)
+            .setData(data)
             .build();
     try {
       ClientCalls.blockingUnaryCall(
           actionChannel,
-          ActionServiceGrpc.getMuteMicrophoneMethod(),
+          ActionServiceGrpc.getSendEventMethod(),
           CallOptions.DEFAULT.withDeadlineAfter(15, TimeUnit.SECONDS),
           request);
     } catch (StatusRuntimeException error) {

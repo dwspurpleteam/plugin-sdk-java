@@ -34,13 +34,18 @@ Java библиотека для получения аудио, видео и с
 osv-scanner scan source --lockfile=gradle.lockfile
 ```
 
-Действия плагина в звонке выполняются через тот же `PluginClient`:
+События и действия отправляются через существующий `PluginClient`:
 
 ```java
 var client = PluginClient.builder("calls.vareonix.cc:443")
     .metadata("authorization", "Bearer " + token)
     .build();
+client.sendEvent(callId, activationId, "subtitle.updated", List.of(participantId), "hello");
 client.muteMicrophone(callId, activationId, participantId);
+// Или через тот же универсальный метод:
+client.sendEvent(callId, activationId, "microphone.mute", List.of(participantId), "");
 ```
 
-`callId` — SID звонка LiveKit, `activationId` — UUID активной активации, `participantId` — identity участника. При ошибке метод выбрасывает `ActionException` с кодом gRPC. Для stage в metadata также передаётся cookie окружения.
+`callId` — SID звонка LiveKit, `activationId` — UUID активной активации, получатели — identity участников. `data` — строка с произвольным содержимым, например JSON. Список получателей не должен быть пустым. `microphone.mute` требует одного получателя и пустых данных; остальные имена отправляются участникам через LiveKit.
+
+При ошибке метод выбрасывает `ActionException` с кодом gRPC. Успешный вызов подтверждает выполнение команды или передачу события в LiveKit, но не обработку в интерфейсе. Для stage в metadata также передаётся cookie окружения.
