@@ -48,7 +48,7 @@ client.removeParticipant(callId, activationId, participantId);
 client.updateParticipantPermissions(callId, activationId, participantId, Map.of("canPublish", false));
 ```
 
-В `callId` передаётся SID звонка LiveKit, в `activationId` — UUID активной активации. Получателей указывают по identity участников; список не должен быть пустым. Поле `data` содержит строку, например JSON.
+В `callId` передаётся SID звонка LiveKit, в `activationId` — UUID активации. Проверка активации пока не реализована. Получателей указывают по identity участников; список не должен быть пустым. Поле `data` содержит строку, например JSON.
 
 Команды `microphone.mute`, `participant.remove` и `participant.permissions.update` применяются к одному участнику. События с другими именами отправляются участникам через LiveKit. При изменении прав можно передать `canPublish`, `canSubscribe`, `canPublishData`, `canUpdateMetadata`; остальные права сохранятся. Удалённый участник может подключиться снова с действующим токеном.
 
