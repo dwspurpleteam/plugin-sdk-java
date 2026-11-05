@@ -34,7 +34,7 @@ Java библиотека для получения аудио, видео и с
 osv-scanner scan source --lockfile=gradle.lockfile
 ```
 
-События и действия отправляются через существующий `PluginClient`:
+События и действия отправляются через `PluginClient`:
 
 ```java
 var client = PluginClient.builder("calls.vareonix.cc:443")
@@ -48,6 +48,8 @@ client.removeParticipant(callId, activationId, participantId);
 client.updateParticipantPermissions(callId, activationId, participantId, Map.of("canPublish", false));
 ```
 
-`callId` — SID звонка LiveKit, `activationId` — UUID активной активации, получатели — identity участников. `data` — строка с произвольным содержимым, например JSON. Список получателей не должен быть пустым. Команды `microphone.mute`, `participant.remove` и `participant.permissions.update` применяются к одному участнику; остальные имена отправляются участникам через LiveKit. Разрешения: `canPublish`, `canSubscribe`, `canPublishData`, `canUpdateMetadata`. Непереданные разрешения сохраняются. Удаление не запрещает повторное подключение с действующим токеном.
+В `callId` передаётся SID звонка LiveKit, в `activationId` — UUID активной активации. Получателей указывают по identity участников; список не должен быть пустым. Поле `data` содержит строку, например JSON.
 
-При ошибке метод выбрасывает `ActionException` с кодом gRPC. Успешный вызов подтверждает выполнение команды или передачу события в LiveKit, но не обработку в интерфейсе. Для stage в metadata также передаётся cookie окружения.
+Команды `microphone.mute`, `participant.remove` и `participant.permissions.update` применяются к одному участнику. События с другими именами отправляются участникам через LiveKit. При изменении прав можно передать `canPublish`, `canSubscribe`, `canPublishData`, `canUpdateMetadata`; остальные права сохранятся. Удалённый участник может подключиться снова с действующим токеном.
+
+При ошибке метод выбрасывает `ActionException` с кодом gRPC. Успешный вызов подтверждает выполнение команды или отправку события в LiveKit, но не его обработку в интерфейсе. Для stage в metadata нужно также передать cookie окружения.
