@@ -3,14 +3,12 @@ package pluginsdk;
 import com.google.protobuf.Timestamp;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
-import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import io.grpc.stub.ClientCalls;
 import io.grpc.stub.MetadataUtils;
 import java.time.Instant;
 import java.util.HashMap;
@@ -132,8 +130,6 @@ public final class PluginClient implements AutoCloseable {
     metadata.forEach(
         (key, value) -> headers.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value));
     headers.put(CALL_ID, callId);
-    var actionChannel =
-        ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(headers));
     var request =
         SendEventRequest.newBuilder()
             .setCallId(callId)
@@ -143,11 +139,10 @@ public final class PluginClient implements AutoCloseable {
             .setData(data)
             .build();
     try {
-      ClientCalls.blockingUnaryCall(
-          actionChannel,
-          ActionServiceGrpc.getSendEventMethod(),
-          CallOptions.DEFAULT.withDeadlineAfter(15, TimeUnit.SECONDS),
-          request);
+      ActionServiceGrpc.newBlockingStub(channel)
+          .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+          .withDeadlineAfter(15, TimeUnit.SECONDS)
+          .sendEvent(request);
     } catch (StatusRuntimeException error) {
       throw new ActionException(
           error.getStatus().getCode().name(), error.getStatus().getDescription(), error);
