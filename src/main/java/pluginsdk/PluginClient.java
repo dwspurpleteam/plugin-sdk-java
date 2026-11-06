@@ -8,12 +8,17 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.MetadataUtils;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -23,8 +28,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import pluginsdk.internal.proto.ActionServiceGrpc;
 import pluginsdk.internal.proto.EventServiceGrpc;
 import pluginsdk.internal.proto.MediaServiceGrpc;
+import pluginsdk.internal.proto.SendEventRequest;
 import pluginsdk.internal.proto.SubscribeEventsRequest;
 import pluginsdk.internal.proto.SubscribeEventsResponse;
 import pluginsdk.internal.proto.SubscribeRequest;
@@ -64,6 +71,82 @@ public final class PluginClient implements AutoCloseable {
 
   static PluginClient forChannel(ManagedChannel channel, Map<String, String> metadata) {
     return new PluginClient(channel, metadata);
+  }
+
+  /** Mutes the published microphone tracks of a participant in an active call. */
+  public void muteMicrophone(String callId, UUID activationId, String participantId) {
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+    sendEvent(callId, activationId, "microphone.mute", List.of(participantId), "");
+  }
+
+  /** Removes a participant from the call. */
+  public void removeParticipant(String callId, UUID activationId, String participantId) {
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+    sendEvent(callId, activationId, "participant.remove", List.of(participantId), "");
+  }
+
+  /** Updates selected participant permissions; unspecified permissions remain unchanged. */
+  public void updateParticipantPermissions(
+      String callId, UUID activationId, String participantId, Map<String, Boolean> permissions) {
+    if (participantId == null || participantId.isBlank())
+      throw new IllegalArgumentException("participantId must not be blank");
+    Objects.requireNonNull(permissions, "permissions");
+    var allowed = Set.of("canPublish", "canSubscribe", "canPublishData", "canUpdateMetadata");
+    if (permissions.isEmpty()
+        || permissions.entrySet().stream()
+            .anyMatch(
+                entry ->
+                    entry.getKey() == null
+                        || !allowed.contains(entry.getKey())
+                        || entry.getValue() == null))
+      throw new IllegalArgumentException("invalid participant permissions");
+    var data = new StringJoiner(",", "{", "}");
+    permissions.forEach((name, value) -> data.add("\"" + name + "\":" + value));
+    sendEvent(
+        callId,
+        activationId,
+        "participant.permissions.update",
+        List.of(participantId),
+        data.toString());
+  }
+
+  /** Sends a named event to participants in an active call. */
+  public void sendEvent(
+      String callId, UUID activationId, String name, List<String> participantIds, String data) {
+    if (closed.get()) throw new IllegalStateException("client is closed");
+    requireCallId(callId);
+    Objects.requireNonNull(activationId, "activationId");
+    if (name == null || name.isBlank())
+      throw new IllegalArgumentException("name must not be blank");
+    Objects.requireNonNull(participantIds, "participantIds");
+    if (participantIds.isEmpty()
+        || participantIds.stream().anyMatch(id -> id == null || id.isBlank()))
+      throw new IllegalArgumentException("participantIds must contain valid recipients");
+    Objects.requireNonNull(data, "data");
+
+    Metadata headers = new Metadata();
+    metadata.forEach(
+        (key, value) -> headers.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value));
+    headers.put(CALL_ID, callId);
+    var request =
+        SendEventRequest.newBuilder()
+            .setCallId(callId)
+            .setActivationId(activationId.toString())
+            .setEventName(name)
+            .addAllParticipantIds(participantIds)
+            .setData(data)
+            .build();
+    try {
+      ActionServiceGrpc.newBlockingStub(channel)
+          .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+          .withDeadlineAfter(15, TimeUnit.SECONDS)
+          .sendEvent(request);
+    } catch (StatusRuntimeException error) {
+      throw new ActionException(
+          error.getStatus().getCode().name(), error.getStatus().getDescription(), error);
+    }
   }
 
   public Subscription subscribeEvents(String callId, EventFilter filter, EventListener listener) {
