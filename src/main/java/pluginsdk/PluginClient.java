@@ -47,8 +47,10 @@ public final class PluginClient implements AutoCloseable {
       Metadata.Key.of("x-call-id", Metadata.ASCII_STRING_MARSHALLER);
   private static final int MAX_RETRIES = 8;
   private static final String PROTOCOL_ERROR = "PROTOCOL_ERROR";
+  private static final String ACTIVATION_ID = "activationId";
 
   private final ManagedChannel channel;
+  private final UUID activationId;
   private final Map<String, String> metadata;
   private final ScheduledExecutorService scheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -60,8 +62,9 @@ public final class PluginClient implements AutoCloseable {
   private final Set<Stream<?>> streams = ConcurrentHashMap.newKeySet();
   private final AtomicBoolean closed = new AtomicBoolean();
 
-  private PluginClient(ManagedChannel channel, Map<String, String> metadata) {
+  private PluginClient(ManagedChannel channel, Map<String, String> metadata, UUID activationId) {
     this.channel = channel;
+    this.activationId = activationId;
     this.metadata = Map.copyOf(metadata);
   }
 
@@ -69,8 +72,9 @@ public final class PluginClient implements AutoCloseable {
     return new Builder(target);
   }
 
-  static PluginClient forChannel(ManagedChannel channel, Map<String, String> metadata) {
-    return new PluginClient(channel, metadata);
+  static PluginClient forChannel(
+      ManagedChannel channel, Map<String, String> metadata, UUID activationId) {
+    return new PluginClient(channel, metadata, activationId);
   }
 
   /** Mutes the published microphone tracks of a participant in an active call. */
@@ -117,7 +121,9 @@ public final class PluginClient implements AutoCloseable {
       String callId, UUID activationId, String name, List<String> participantIds, String data) {
     if (closed.get()) throw new IllegalStateException("client is closed");
     requireCallId(callId);
-    Objects.requireNonNull(activationId, "activationId");
+    Objects.requireNonNull(activationId, ACTIVATION_ID);
+    if (!activationId.equals(this.activationId))
+      throw new IllegalArgumentException("activationId does not match client credentials");
     if (name == null || name.isBlank())
       throw new IllegalArgumentException("name must not be blank");
     Objects.requireNonNull(participantIds, "participantIds");
@@ -153,10 +159,12 @@ public final class PluginClient implements AutoCloseable {
     requireCallId(callId);
     Objects.requireNonNull(filter, "filter");
     Objects.requireNonNull(listener, "listener");
+    Objects.requireNonNull(activationId, ACTIVATION_ID);
 
     var request =
         SubscribeEventsRequest.newBuilder()
             .setCallId(callId)
+            .setActivationId(activationId.toString())
             .setParticipantId(filter.participantId())
             .addAllEventTypes(filter.eventTypes())
             .build();
@@ -197,10 +205,12 @@ public final class PluginClient implements AutoCloseable {
       throw new IllegalArgumentException("roomName must not be blank");
     Objects.requireNonNull(filter, "filter");
     Objects.requireNonNull(listener, "listener");
+    Objects.requireNonNull(activationId, ACTIVATION_ID);
 
     var builder =
         SubscribeRequest.newBuilder()
             .setCallId(callId)
+            .setActivationId(activationId.toString())
             .setRoomName(roomName)
             .setParticipantId(filter.participantId())
             .setTrackId(filter.trackId());
@@ -320,6 +330,7 @@ public final class PluginClient implements AutoCloseable {
     private final String target;
     private final Map<String, String> metadata = new HashMap<>();
     private boolean plaintext;
+    private UUID activationId;
 
     private Builder(String target) {
       if (target == null || target.isBlank())
@@ -333,12 +344,20 @@ public final class PluginClient implements AutoCloseable {
       return this;
     }
 
+    public Builder activation(UUID id, String secret) {
+      activationId = Objects.requireNonNull(id, "id");
+      if (secret == null || secret.isBlank())
+        throw new IllegalArgumentException("activation secret must not be blank");
+      metadata.put("authorization", "Bearer " + secret);
+      return this;
+    }
+
     public Builder metadata(String key, String value) {
       Objects.requireNonNull(key, "key");
       Objects.requireNonNull(value, "value");
 
-      if (key.equalsIgnoreCase("x-call-id"))
-        throw new IllegalArgumentException("x-call-id is set per subscription");
+      if (key.equalsIgnoreCase("x-call-id") || key.equalsIgnoreCase("authorization"))
+        throw new IllegalArgumentException("reserved metadata key");
 
       String normalized = key.toLowerCase(Locale.ROOT);
       Metadata.Key.of(normalized, Metadata.ASCII_STRING_MARSHALLER);
@@ -348,11 +367,12 @@ public final class PluginClient implements AutoCloseable {
     }
 
     public PluginClient build() {
+      Objects.requireNonNull(activationId, ACTIVATION_ID);
       ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forTarget(target);
       if (plaintext) builder.usePlaintext();
       else builder.useTransportSecurity();
 
-      return new PluginClient(builder.build(), metadata);
+      return new PluginClient(builder.build(), metadata, activationId);
     }
   }
 

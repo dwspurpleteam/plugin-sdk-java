@@ -31,7 +31,7 @@ repositories {
 }
 
 val protoContract = configurations.create("protoContract")
-val streamapiRevision = "v1.2.0"
+val streamapiRevision = "975f319fdc8e4dc3e1c4d6ff40a4950449ef3c6d"
 
 val prepareProto = tasks.register<Sync>("prepareProto") {
     from(protoContract) {
@@ -66,7 +66,11 @@ dependencies {
     implementation("com.google.guava:guava:33.7.2-jre")
     runtimeOnly("io.grpc:grpc-netty-shaded:$grpcVersion")
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+tasks.test { useJUnitPlatform() }
 
 java {
     withSourcesJar()
