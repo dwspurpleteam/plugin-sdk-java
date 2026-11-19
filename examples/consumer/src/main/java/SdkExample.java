@@ -1,3 +1,4 @@
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import pluginsdk.EventFilter;
 import pluginsdk.MediaFilter;
@@ -13,7 +14,11 @@ public class SdkExample {
       System.exit(2);
     }
 
-    var builder = PluginClient.builder(args[0]);
+    var builder =
+        PluginClient.builder(args[0])
+            .activation(
+                UUID.fromString(System.getenv("PLUGIN_ACTIVATION_ID")),
+                System.getenv("PLUGIN_ACTIVATION_SECRET"));
     if (Boolean.parseBoolean(System.getenv("PLUGIN_SDK_PLAINTEXT"))) builder.plaintext();
 
     String cookie = System.getenv("PLUGIN_SDK_COOKIE");
